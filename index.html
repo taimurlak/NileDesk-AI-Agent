@@ -6,9 +6,7 @@
   <title>NileDesk Chatbot</title>
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -39,17 +37,16 @@
       color: white;
       text-align: center;
       font-weight: bold;
-      font-size: 16px;
     }
 
     .messages {
       flex: 1;
       padding: 12px;
       overflow-y: auto;
-      background: #f9f9f9;
       display: flex;
       flex-direction: column;
       gap: 8px;
+      background: #f9f9f9;
     }
 
     .msg {
@@ -58,7 +55,6 @@
       max-width: 80%;
       word-wrap: break-word;
       font-size: 14px;
-      line-height: 1.4;
     }
 
     .user {
@@ -69,6 +65,11 @@
     .bot {
       background: #e9e9e9;
       align-self: flex-start;
+    }
+
+    .thinking {
+      font-style: italic;
+      opacity: 0.7;
     }
 
     .input-area {
@@ -84,8 +85,8 @@
       padding: 12px;
       border: 1px solid #ddd;
       border-radius: 8px;
-      outline: none;
       font-size: 14px;
+      outline: none;
     }
 
     button {
@@ -94,34 +95,15 @@
       border-radius: 8px;
       background: #2d6cdf;
       color: white;
-      font-size: 14px;
       cursor: pointer;
-      min-width: 70px;
     }
 
-    button:active {
-      transform: scale(0.98);
-    }
-
-    /* Mobile tweaks */
     @media (max-width: 600px) {
       .chat-container {
         height: 100dvh;
         border-radius: 0;
       }
-
-      .msg {
-        max-width: 90%;
-        font-size: 13px;
-      }
-
-      input {
-        font-size: 13px;
-      }
-
-      button {
-        font-size: 13px;
-      }
+      .msg { max-width: 90%; }
     }
   </style>
 </head>
@@ -143,12 +125,26 @@
   const sessionId = crypto.randomUUID();
   const messagesDiv = document.getElementById("messages");
 
-  function addMessage(text, type) {
+  let thinkingElement = null;
+
+  function addMessage(text, type, extraClass = "") {
     const div = document.createElement("div");
-    div.className = `msg ${type}`;
+    div.className = `msg ${type} ${extraClass}`;
     div.innerText = text;
     messagesDiv.appendChild(div);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    return div;
+  }
+
+  function showThinking() {
+    thinkingElement = addMessage("AI is thinking...", "bot", "thinking");
+  }
+
+  function removeThinking() {
+    if (thinkingElement) {
+      thinkingElement.remove();
+      thinkingElement = null;
+    }
   }
 
   async function sendMessage() {
@@ -158,6 +154,8 @@
 
     addMessage(msg, "user");
     input.value = "";
+
+    showThinking();
 
     try {
       const res = await fetch("https://app.niledesk.com/api/AIAgent/tests/6a0492348c1fee51e45a9ba9", {
@@ -173,15 +171,17 @@
       });
 
       const data = await res.json();
+
+      removeThinking();
       addMessage(data.response || "No response", "bot");
 
     } catch (err) {
+      removeThinking();
       addMessage("Error calling API", "bot");
       console.error(err);
     }
   }
 
-  // Enter key support
   document.getElementById("input").addEventListener("keypress", function (e) {
     if (e.key === "Enter") sendMessage();
   });
